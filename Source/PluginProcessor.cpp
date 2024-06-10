@@ -87,9 +87,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout SimpleEQAudioProcessor::crea
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Freq",   "LowCut Freq",  juce::NormalisableRange<float>(20.0f, 20000.0f, 1.f, 1.0f), 20.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Freq",  "HighCut Freq", juce::NormalisableRange<float>(20.0f, 20000.0f, 1.f, 1.0f), 20000.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Freq",     "Peak Freq",    juce::NormalisableRange<float>(20.0f, 20000.0f, 1.f, 1.0f), 750.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Freq",   "LowCut Freq",  juce::NormalisableRange<float>(20.0f, 20000.0f, 1.f, 0.25f), 20.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Freq",  "HighCut Freq", juce::NormalisableRange<float>(20.0f, 20000.0f, 1.f, 0.25f), 20000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Freq",     "Peak Freq",    juce::NormalisableRange<float>(20.0f, 20000.0f, 1.f, 0.25f), 750.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Gain",     "Peak Gain",    juce::NormalisableRange<float>(-24.0f, 24.0f, 0.5f, 1.0f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Quality",  "Peak Quality", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.0f), 1.0f));
 
@@ -108,6 +108,23 @@ juce::AudioProcessorValueTreeState::ParameterLayout SimpleEQAudioProcessor::crea
     return layout;
 }
 
+ChainSettings SimpleEQAudioProcessor::getChainSettings(juce::AudioProcessorValueTreeState& treeState)
+{
+    ChainSettings settings;
+
+    settings.peakFreq = treeState.getRawParameterValue("Peak Freq")->load();
+    settings.peakQ = treeState.getRawParameterValue("Peak Quality")->load();
+    settings.peakGainDb = treeState.getRawParameterValue("Peak Gain")->load();
+
+    settings.lowCutFr = treeState.getRawParameterValue("LowCut Freq")->load();
+    settings.highCutFr = treeState.getRawParameterValue("HighCut Freq")->load();
+
+    settings.lowCutSlp = treeState.getRawParameterValue("LowCut Slope")->load();
+    settings.highCutSlp = treeState.getRawParameterValue("HighCut Slope")->load();
+
+    return settings;
+}
+
 //==============================================================================
 void SimpleEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
@@ -118,6 +135,15 @@ void SimpleEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 
     leftChain.prepare(spec);
     rightChain.prepare(spec);
+
+    auto chainSettings = getChainSettings(apvts);
+    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+                                                                     chainSettings.peakFreq,
+                                                                                chainSettings.peakQ,
+                                                                          juce::Decibels::decibelsToGain( chainSettings.peakGainDb ));
+
+    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
 }
 
 void SimpleEQAudioProcessor::releaseResources()
@@ -169,6 +195,15 @@ void SimpleEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
     leftChain.process(leftContext);
     rightChain.process(rightContext);
+
+    auto chainSettings = getChainSettings(apvts);
+    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
+                                                                                chainSettings.peakFreq,
+                                                                                chainSettings.peakQ,
+                                                                                juce::Decibels::decibelsToGain( chainSettings.peakGainDb ));
+
+    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
 }
 
 //==============================================================================
