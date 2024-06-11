@@ -69,6 +69,8 @@ private:
     using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, CutFilter>;
     MonoChain leftChain, rightChain;
 
+    using Coefficients = typename Filter::CoefficientsPtr;
+
     enum ChainPositions
     {
         LowCut,
@@ -76,6 +78,39 @@ private:
         HighCut,
         END_OF_LIST
     };
+
+    template<int Index, typename ChainType, typename CoefficientType>
+    void update(ChainType& chain, const CoefficientType& coefficients)
+    {
+        updateCoefficients(chain.template get<Index>().coefficients, coefficients[Index]);
+        chain.template setBypassed<Index>(false);
+    }
+
+    template<typename ChainType, typename CoefficientType>
+    void updateCutFilter(ChainType& leftLowCut, const CoefficientType& cutCoefficients,
+                         const Slope lowCutSlope)
+    {
+        leftLowCut.template setBypassed<0>(true);
+        leftLowCut.template setBypassed<1>(true);
+        leftLowCut.template setBypassed<2>(true);
+        leftLowCut.template setBypassed<3>(true);
+
+        switch (lowCutSlope)
+        {
+            case Slope_48:
+                update<3>(leftLowCut, cutCoefficients);
+            case Slope_36:
+                update<2>(leftLowCut, cutCoefficients);
+            case Slope_24:
+                update<1>(leftLowCut, cutCoefficients);
+            case Slope_12:
+                update<0>(leftLowCut, cutCoefficients);
+        }
+    }
+
+    //==============================================================================
+    void updatePeakFilter (const ChainSettings& chainSettings);
+    static void updateCoefficients(Coefficients& old, const Coefficients& replace);
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
