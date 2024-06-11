@@ -3,11 +3,19 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 
+enum Slope
+{
+    Slope_12,
+    Slope_24,
+    Slope_36,
+    Slope_48,
+};
+
 struct ChainSettings
 {
     float peakFreq {0.f}, peakGainDb {0.f}, peakQ {1.0f};
     float lowCutFr {0.f}, highCutFr {0.f};
-    int lowCutSlp {0}, highCutSlp {0};
+    Slope lowCutSlp { Slope::Slope_12 }, highCutSlp { Slope::Slope_12 };
 };
 
 //==============================================================================
