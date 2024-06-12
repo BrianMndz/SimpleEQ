@@ -109,8 +109,12 @@ private:
     }
 
     //==============================================================================
-    void updatePeakFilter (const ChainSettings& chainSettings);
     static void updateCoefficients(Coefficients& old, const Coefficients& replace) { old = replace; }
+
+    void updatePeakFilter (const ChainSettings& chainSettings);
+    void updateLowCutFilter(const ChainSettings& chainSettings);
+    void updateHighCutFilter(const ChainSettings& chainSettings);
+    void updateFilters();
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
