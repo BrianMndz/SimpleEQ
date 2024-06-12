@@ -58,7 +58,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& treeState);
+    static ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& treeState);
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
@@ -110,7 +110,7 @@ private:
 
     //==============================================================================
     void updatePeakFilter (const ChainSettings& chainSettings);
-    static void updateCoefficients(Coefficients& old, const Coefficients& replace);
+    static void updateCoefficients(Coefficients& old, const Coefficients& replace) { old = replace; }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
