@@ -6,9 +6,13 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor (SimpleEQAudioProcess
     : AudioProcessorEditor (&p), processorRef (p)
 {
     juce::ignoreUnused (processorRef);
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+
+    for (auto* comp : getComponents())
+    {
+        addAndMakeVisible(comp);
+    }
+
+    setSize (600, 400);
 }
 
 SimpleEQAudioProcessorEditor::~SimpleEQAudioProcessorEditor()
@@ -18,16 +22,35 @@ SimpleEQAudioProcessorEditor::~SimpleEQAudioProcessorEditor()
 //==============================================================================
 void SimpleEQAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
-    g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void SimpleEQAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+    auto bounds = getLocalBounds();
+    auto responseArea = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.33));
+
+    auto lowCutArea = bounds.removeFromLeft(static_cast<int>(bounds.getWidth() * 0.33));
+    auto highCutArea = bounds.removeFromRight(static_cast<int>(bounds.getWidth() * 0.5));
+
+    lowCutSlider.setBounds(lowCutArea.removeFromTop(static_cast<int>(lowCutArea.getHeight() * 0.5)));
+    lowSlopeSlider.setBounds(lowCutArea);
+
+    highCutSlider.setBounds(highCutArea.removeFromTop(static_cast<int>(highCutArea.getHeight() * 0.5)));
+    highSlopeSlider.setBounds(highCutArea);
+
+    peakFreqSlider.setBounds(bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.33)));
+    peakGainSlider.setBounds(bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.5)));
+    peakQSlider.setBounds(bounds);
+}
+
+std::vector<juce::Component *> SimpleEQAudioProcessorEditor::getComponents()
+{
+    return
+    {
+      &peakFreqSlider, &peakGainSlider, &peakQSlider,
+      &lowCutSlider, &highCutSlider,
+      &lowSlopeSlider, &highSlopeSlider,
+    };
 }
